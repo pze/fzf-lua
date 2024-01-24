@@ -80,10 +80,19 @@ M.ui_select = function(items, ui_opts, on_choice)
   end
 
   local entries = {}
+
+  local max_bits = #(tostring(#items))
+  local left_pad_format = "%0" .. max_bits .. "s"
+  local index_format = left_pad_format .. ". %s"
+
   for i, e in ipairs(items) do
-    table.insert(entries,
-      ("%s. %s"):format(utils.ansi_codes.magenta(tostring(i)),
-        ui_opts.format_item and ui_opts.format_item(e) or tostring(e)))
+    table.insert(
+      entries,
+      (index_format):format(
+        tostring(i),
+        ui_opts.format_item and ui_opts.format_item(e) or tostring(e)
+      )
+    )
   end
 
   local opts = _OPTS or {}
