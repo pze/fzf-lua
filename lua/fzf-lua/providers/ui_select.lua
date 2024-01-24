@@ -47,7 +47,7 @@ M.register = function(opts, silent, opts_once)
 end
 
 M.accept_item = function(selected, o)
-  local idx = selected and tonumber(selected[1]:match("^(%d+)%.")) or nil
+  local idx = selected and tonumber(selected[1]:match("^%s*(%d+)%.")) or nil
   o._on_choice(idx and o._items[idx] or nil, idx)
 end
 
