@@ -1,4 +1,4 @@
-*fzf-lua.txt*         For Neovim >= 0.5.0         Last change: 2024 January 05
+*fzf-lua.txt*          For Neovim >= 0.5.0          Last change: 2024 April 08
 
 ==============================================================================
 Table of Contents                                  *fzf-lua-table-of-contents*
@@ -9,6 +9,7 @@ Rationale ................................................ |fzf-lua-rationale|
 Why Fzf-Lua ............................................ |fzf-lua-why-fzf-lua|
 Dependencies .......................................... |fzf-lua-dependencies|
 Optional dependencies ........................ |fzf-lua-optional-dependencies|
+Windows Notes ........................................ |fzf-lua-windows-notes|
 Installation .......................................... |fzf-lua-installation|
 Usage ........................................................ |fzf-lua-usage|
 Resume ...................................................... |fzf-lua-resume|
@@ -38,7 +39,7 @@ FZF :HEART: LUA                                      *fzf-lua-fzf-:heart:-lua*
 Neovim version
 <https://img.shields.io/badge/Neovim-0.5-57A143?style=flat-square&logo=neovim>
 
-Quickstart <#quickstart> •Installation <#installation> • Usage <#usage>
+Quickstart <#quickstart> • Installation <#installation> • Usage <#usage>
 • Commands <#commands> • Customization <#customization> • Wiki
 <https://github.com/ibhagwan/fzf-lua/wiki>
 
@@ -56,7 +57,7 @@ CONTENTS                                                    *fzf-lua-contents*
 - Rationale <#rationale>
 - Why Fzf-lua <#why-fzf-lua>
 - Dependencies <#dependencies> + Optional Dependencies
-  <#optional-dependencies>
+  <#optional-dependencies> + Windows Notes <#windows-notes>
 - Installation <#installation>
 - Usage <#usage> + Resume <#resume>
 - Commands <#commands> + Buffers and Files <#buffers-and-files> + Search
@@ -144,7 +145,6 @@ throw at it. That, **and colorful file icons and git indicators!**.
 DEPENDENCIES                                            *fzf-lua-dependencies*
 
 
-- `Linux` or `MacOS`
 - `neovim` <https://github.com/neovim/neovim/releases> version > `0.5.0`
 - `fzf` <https://github.com/junegunn/fzf> version > `0.24` **or** `skim`
   <https://github.com/lotabout/skim> binary installed
@@ -169,6 +169,21 @@ to configure in `previewer.builtin.extensions`):
   (recommended, supports most file formats)
 - viu <https://github.com/atanunq/viu> - terminal image previewer
 - ueberzug <https://github.com/seebye/ueberzug> - X11 image previewer
+
+                                                                              
+WINDOWS NOTES                                          *fzf-lua-windows-notes*
+
+- rg <https://github.com/BurntSushi/ripgrep> is required for `grep` and `tags`
+- git <https://git-scm.com/download/win> for Windows is required for `git`
+  (though installing `git-bash`|`sh` **is not required**).
+- Installation of dependencies (fzf, rg, fd, etc) is possible via scoop
+  <https://github.com/ScoopInstaller/Install>, chocolatey
+  <https://chocolatey.org/install> or winget-cli
+  <https://github.com/microsoft/winget-cli>
+- Although almost everything works on Windows exactly as the *NIX/OSX check
+  out the Windows README
+  <https://github.com/ibhagwan/fzf-lua/blob/main/README-Win.md> for known
+  issues and limitations.
 
 ------------------------------------------------------------------------------
 INSTALLATION                                            *fzf-lua-installation*
@@ -353,9 +368,9 @@ LSP/DIAGNOSTICS                                      *fzf-lua-lsp/diagnostics*
 | `lsp_document_symbols`       | Document Symbols                 |
 | `lsp_workspace_symbols`      | Workspace Symbols                |
 | `lsp_live_workspace_symbols` | Workspace Symbols (live query)   |
-| `lsp_code_actions`           | Code Actions                     |
 | `lsp_incoming_calls`         | Incoming Calls                   |
 | `lsp_outgoing_calls`         | Outgoing Calls                   |
+| `lsp_code_actions`           | Code Actions                     |
 | `lsp_finder`                 | All LSP locations, combined view |
 | `diagnostics_document`       | Document Diagnostics             |
 | `diagnostics_workspace`      | Workspace Diagnostics            |
@@ -368,27 +383,28 @@ MISC                                                            *fzf-lua-misc*
 
 | Command          | List                                       |
 | ---------------- | ------------------------------------------ |
-| `resume`           | resume last command/query                  |
-| `builtin`          | fzf-lua builtin commands                   |
-| `profiles`         | fzf-lua configuration profiles             |
-| `help_tags`        | help tags                                  |
-| `man_pages`        | man pages                                  |
-| `colorschemes`     | color schemes                              |
-| `highlights`       | highlight groups                           |
-| `commands`         | neovim commands                            |
-| `command_history`  | command history                            |
-| `search_history`   | search history                             |
-| `marks`            | :marks                                     |
-| `jumps`            | :jumps                                     |
-| `changes`          | :changes                                   |
-| `registers`        | :registers                                 |
-| `tagstack`         | :tags                                      |
-| `autocmds`         | :autocmd                                   |
-| `keymaps`          | key mappings                               |
-| `filetypes`        | filetypes                                  |
-| `menus`            | menus                                      |
-| `spell_suggest`    | spelling suggestions                       |
-| `packadd`          | :packadd <package>                         |
+| `resume`               | resume last command/query              |
+| `builtin`              | fzf-lua builtin commands               |
+| `profiles`             | fzf-lua configuration profiles         |
+| `helptags`             | help tags                              |
+| `manpages`             | man pages                              |
+| `colorschemes`         | color schemes                          |
+| `awesome_colorschemes` | Awesome Neovim color schemes           | 
+| `highlights`           | highlight groups                       |
+| `commands`             | neovim commands                        |
+| `command_history`      | command history                        |
+| `search_history`       | search history                         |
+| `marks`                | :marks                                 |
+| `jumps`                | :jumps                                 |
+| `changes`              | :changes                               |
+| `registers`            | :registers                             |
+| `tagstack`             | :tags                                  |
+| `autocmds`             | :autocmd                               |
+| `keymaps`              | key mappings                           |
+| `filetypes`            | filetypes                              |
+| `menus`                | menus                                  |
+| `spell_suggest`        | spelling suggestions                   |
+| `packadd`              | :packadd <package>                     |
 
 
                                                                               
@@ -489,7 +505,7 @@ Can also be called from a `.vim` file:
                                                                               
 PROFILES                                                    *fzf-lua-profiles*
 
-Conviniently, fzf-lua comes with a set of preconfigured profiles, notably:
+Conveniently, fzf-lua comes with a set of preconfigured profiles, notably:
 
 | Profile          | Details                                    |
 | ---------------- | ------------------------------------------ |
@@ -515,6 +531,12 @@ telescope defaults with `bat` previewer:
 
 >lua
     :lua require"fzf-lua".setup({"telescope",winopts={preview={default="bat"}}})
+<
+Combining of profiles is also available by sending table instead of string as
+the first argument:
+
+>lua
+    :lua require"fzf-lua".setup({{"telescope","fzf-native"},winopts={fullscreen=true}})
 <
 See profiles
 <https://github.com/ibhagwan/fzf-lua/tree/main/lua/fzf-lua/profiles> for more
@@ -732,10 +754,10 @@ open an issue and I'll be more than happy to help.**
       fzf_opts = {
         -- options are sent as `<left>=<right>`
         -- set to `false` to remove a flag
-        -- set to '' for a non-value flag
+        -- set to `true` for a no-value flag
         -- for raw args use `fzf_args` instead
-        ["--ansi"]        = "",
-        ["--info"]        = "inline",
+        ["--ansi"]        = true,
+        ["--info"]        = "inline-right", -- fzf < v0.42 = "inline"
         ["--height"]      = "100%",
         ["--layout"]      = "reverse",
         ["--border"]      = "none",
@@ -745,7 +767,19 @@ open an issue and I'll be more than happy to help.**
       -- and removes the sides margin added by `fzf-tmux` (fzf#3162)
       -- for more options run `fzf-tmux --help`
       fzf_tmux_opts       = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
-      -- fzf '--color=' options (optional)
+      -- fzf's `--color=` arguments (optional)
+      -- If rhs is of type "string" rhs will be passed raw, e.g.:
+      --   `["fg"] = "underline"` will be translated to `--color fg:underline`
+      -- If rhs is of type "table", the following convention is used:
+      --   [1] "what" field to extract from the hlgroup, i.e "fg", "bg", etc.
+      --   [2] Neovim highlight group(s), can be either "string" or "table"
+      --       when type is "table" the first existing highlight group is used
+      --   [3+] any additional fields are passed raw to fzf's command line args
+      -- Example of a "fully loaded" color option:
+      --   `["fg"] = { "fg", { "NonExistentHl", "Comment" }, "underline", "bold" }`
+      -- Assuming `Comment.fg=#010101` the resulting fzf command line will be:
+      --   `--color fg:#010101:underline:bold`
+      -- NOTE: to pass raw arguments `fzf_opts["--color"]` or `fzf_args`
       --[[ fzf_colors = {
           ["fg"]          = { "fg", "CursorLine" },
           ["bg"]          = { "bg", "Normal" },
@@ -764,7 +798,7 @@ open an issue and I'll be more than happy to help.**
       previewers = {
         cat = {
           cmd             = "cat",
-          args            = "--number",
+          args            = "-n",
         },
         bat = {
           cmd             = "bat",
@@ -800,7 +834,7 @@ open an issue and I'll be more than happy to help.**
           -- exclude specific filetypes with: `{ disable = { "lua" } }
           -- disable fully with: `{ enable = false }`
           treesitter      = { enable = true, disable = {} },
-          -- By default, the main window dimensions are calculted as if the
+          -- By default, the main window dimensions are calculated as if the
           -- preview is visible, when hidden the main window will extend to
           -- full size. Set the below to "extend" to prevent the main window
           -- from being modified when toggling the preview.
@@ -844,7 +878,7 @@ open an issue and I'll be more than happy to help.**
       },
       -- PROVIDERS SETUP
       -- use `defaults` (table or function) if you wish to set "global-provider" defaults
-      -- for exmaple, disabling file icons globally and open the quickfix list at the top
+      -- for example, disabling file icons globally and open the quickfix list at the top
       --   defaults = {
       --     file_icons   = false,
       --     copen        = "topleft copen",
@@ -865,8 +899,8 @@ open an issue and I'll be more than happy to help.**
         -- NOTE: 'find -printf' requires GNU find
         -- cmd            = "find . -type f -printf '%P\n'",
         find_opts         = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
-        rg_opts           = "--color=never --files --hidden --follow -g '!.git'",
-        fd_opts           = "--color=never --type f --hidden --follow --exclude .git",
+        rg_opts           = [[--color=never --files --hidden --follow -g "!.git"]],
+        fd_opts           = [[--color=never --type f --hidden --follow --exclude .git]],
         -- by default, cwd appears in the header only if {opts} contain a cwd
         -- parameter to a different folder than the current working directory
         -- uncomment if you wish to force display of the cwd as part of the
@@ -879,11 +913,12 @@ open an issue and I'll be more than happy to help.**
         actions = {
           -- inherits from 'actions.files', here we can override
           -- or set bind to 'false' to disable a default action
+          -- action to toggle `--no-ignore`, requires fd or rg installed
+          ["ctrl-g"]         = { actions.toggle_ignore },
+          -- uncomment to override `actions.file_edit_or_qf`
           --   ["default"]   = actions.file_edit,
           -- custom actions are available too
           --   ["ctrl-y"]    = function(selected) print(selected[1]) end,
-          -- action to toggle `--no-ignore`, requires fd or rg installed
-          --   ["ctrl-g"]    = { actions.toggle_ignore },
         }
       },
       git = {
@@ -894,13 +929,13 @@ open an issue and I'll be more than happy to help.**
           git_icons     = true,           -- show git icons?
           file_icons    = true,           -- show file icons?
           color_icons   = true,           -- colorize file|git icons
-          -- force display the cwd header line regardles of your current working
+          -- force display the cwd header line regardless of your current working
           -- directory can also be used to hide the header when not wanted
           -- cwd_header = true
         },
         status = {
           prompt        = 'GitStatus❯ ',
-          cmd           = "git -c color.status=false status -su",
+          cmd           = "git -c color.status=false --no-optional-locks status --porcelain=v1 -u",
           multiprocess  = true,           -- run command in a separate process
           file_icons    = true,
           git_icons     = true,
@@ -925,7 +960,8 @@ open an issue and I'll be more than happy to help.**
         },
         commits = {
           prompt        = 'Commits❯ ',
-          cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset'",
+          cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+              .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset"]],
           preview       = "git show --color {1}",
           -- git-delta is automatically detected as pager, uncomment to disable
           -- preview_pager = false,
@@ -942,7 +978,8 @@ open an issue and I'll be more than happy to help.**
           --   git show --color {1} --rotate-to={file}
           --   {1}    : commit SHA (fzf field index expression)
           --   {file} : filepath placement within the commands
-          cmd           = "git log --color --pretty=format:'%C(yellow)%h%Creset %Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {file}",
+          cmd           = [[git log --color --pretty=format:"%C(yellow)%h%Creset ]]
+              .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {file}]],
           preview       = "git show --color {1} -- {file}",
           -- git-delta is automatically detected as pager, uncomment to disable
           -- preview_pager = false,
@@ -960,17 +997,24 @@ open an issue and I'll be more than happy to help.**
           preview  = "git log --graph --pretty=oneline --abbrev-commit --color {1}",
           actions  = {
             ["default"] = actions.git_switch,
+            ["ctrl-x"]  = { fn = actions.git_branch_del, reload = true },
+            ["ctrl-a"]  = { fn = actions.git_branch_add, field_index = "{q}", reload = true },
           },
+          -- If you wish to add branch and switch immediately
+          -- cmd_add  = { "git", "checkout", "-b" },
+          cmd_add  = { "git", "branch" },
+          -- If you wish to delete unmerged branches add "--force"
+          -- cmd_del  = { "git", "branch", "--delete", "--force" },
+          cmd_del  = { "git", "branch", "--delete" },
         },
         tags = {
           prompt   = "Tags> ",
-          cmd      = "git for-each-ref --color --sort=-taggerdate --format "
-              .. "'%(color:yellow)%(refname:short)%(color:reset) "
-              .. "%(color:green)(%(taggerdate:relative))%(color:reset)"
-              .. " %(subject) %(color:blue)%(taggername)%(color:reset)' refs/tags",
-          preview  = "git log --graph --color --pretty=format:'%C(yellow)%h%Creset "
-              .. "%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset' {1}",
-          fzf_opts = { ["--no-multi"] = "" },
+          cmd      = [[git for-each-ref --color --sort="-taggerdate" --format ]]
+              .. [["%(color:yellow)%(refname:short)%(color:reset) ]]
+              .. [[%(color:green)(%(taggerdate:relative))%(color:reset)]]
+              .. [[ %(subject) %(color:blue)%(taggername)%(color:reset)" refs/tags]],
+          preview  = [[git log --graph --color --pretty=format:"%C(yellow)%h%Creset ]]
+              .. [[%Cgreen(%><(12)%cr%><|(12))%Creset %s %C(blue)<%an>%Creset" {1}]],
           actions  = { ["default"] = actions.git_checkout },
         },
         stash = {
@@ -980,10 +1024,6 @@ open an issue and I'll be more than happy to help.**
           actions = {
             ["default"]   = actions.git_stash_apply,
             ["ctrl-x"]    = { fn = actions.git_stash_drop, reload = true },
-          },
-          fzf_opts = {
-            ["--no-multi"]  = '',
-            ['--delimiter'] = "'[:]'",
           },
         },
         icons = {
@@ -1023,7 +1063,7 @@ open an issue and I'll be more than happy to help.**
         -- advanced usage: for custom argument parsing define
         -- 'rg_glob_fn' to return a pair:
         --   first returned argument is the new search query
-        --   second returned argument are addtional rg flags
+        --   second returned argument are additional rg flags
         -- rg_glob_fn = function(query, opts)
         --   ...
         --   return new_query, flags
@@ -1032,6 +1072,8 @@ open an issue and I'll be more than happy to help.**
           -- actions inherit from 'actions.files' and merge
           -- this action toggles between 'grep' and 'live_grep'
           ["ctrl-g"]      = { actions.grep_lgrep }
+          -- uncomment to enable '.gitignore' toggle for grep
+          -- ["ctrl-r"]   = { actions.toggle_ignore }
         },
         no_header             = false,    -- hide grep|cwd header?
         no_header_i           = false,    -- hide interactive header?
@@ -1078,7 +1120,7 @@ open an issue and I'll be more than happy to help.**
         },
         fzf_opts = {
           -- hide tabnr
-          ['--delimiter'] = "'[\\):]'",
+          ["--delimiter"] = "[\\):]",
           ["--with-nth"]  = '2..',
         },
       },
@@ -1091,7 +1133,7 @@ open an issue and I'll be more than happy to help.**
         fzf_opts = {
           -- do not include bufnr in fuzzy matching
           -- tiebreak by line no.
-          ['--delimiter'] = "'[\\]:]'",
+          ["--delimiter"] = "[\\]:]",
           ["--nth"]       = '2..',
           ["--tiebreak"]  = 'index',
           ["--tabstop"]   = "1",
@@ -1111,7 +1153,7 @@ open an issue and I'll be more than happy to help.**
         -- start          = "cursor"      -- start display from cursor?
         fzf_opts = {
           -- hide filename, tiebreak by line no.
-          ["--delimiter"] = "'[:]'",
+          ["--delimiter"] = "[:]",
           ["--with-nth"]  = '2..',
           ["--tiebreak"]  = 'index',
           ["--tabstop"]   = "1",
@@ -1133,7 +1175,7 @@ open an issue and I'll be more than happy to help.**
         -- 'tags_live_grep' options, `rg` prioritizes over `grep`
         rg_opts               = "--no-heading --color=always --smart-case",
         grep_opts             = "--color=auto --perl-regexp",
-        fzf_opts              = { ["--info"] = "default", ["--tiebreak"] = "begin" },
+        fzf_opts              = { ["--tiebreak"] = "begin" },
         actions = {
           -- actions inherit from 'actions.files' and merge
           -- this action toggles between 'grep' and 'live_grep'
@@ -1145,25 +1187,47 @@ open an issue and I'll be more than happy to help.**
       btags = {
         prompt                = 'BTags❯ ',
         ctags_file            = nil,      -- auto-detect from tags-option
-        ctags_autogen         = false,    -- dynamically generate ctags each call
+        ctags_autogen         = true,     -- dynamically generate ctags each call
         multiprocess          = true,
         file_icons            = false,
         git_icons             = false,
         rg_opts               = "--color=never --no-heading",
         grep_opts             = "--color=never --perl-regexp",
-        fzf_opts              = { ["--info"] = "default", ["--tiebreak"] = "begin" },
+        fzf_opts              = { ["--tiebreak"] = "begin" },
         -- actions inherit from 'actions.files'
       },
       colorschemes = {
         prompt            = 'Colorschemes❯ ',
         live_preview      = true,       -- apply the colorscheme on preview?
-        actions           = { ["default"] = actions.colorscheme, },
+        actions           = { ["default"] = actions.colorscheme },
         winopts           = { height = 0.55, width = 0.30, },
         -- uncomment to ignore colorschemes names (lua patterns)
         -- ignore_patterns   = { "^delek$", "^blue$" },
-        -- uncomment to execute a callback after interface is closed
+        -- uncomment to execute a callback on preview|close
         -- e.g. a call to reset statusline highlights
-        -- post_reset_cb     = function() ... end,
+        -- cb_preview        = function() ... end,
+        -- cb_exit           = function() ... end,
+      },
+      awesome_colorschemes = {
+        prompt            = 'Colorschemes❯ ',
+        live_preview      = true,       -- apply the colorscheme on preview?
+        max_threads       = 5,          -- max download/update threads
+        winopts           = { row = 0, col = 0.99, width = 0.50 },
+        fzf_opts          = {
+          ["--multi"]     = true,
+          ["--delimiter"] = "[:]",
+          ["--with-nth"]  = "3..",
+          ["--tiebreak"]  = "index",
+        },
+        actions           = {
+          ["default"] = actions.colorscheme,
+          ["ctrl-g"]  = { fn = actions.toggle_bg, exec_silent = true },
+          ["ctrl-r"]  = { fn = actions.cs_update, reload = true },
+          ["ctrl-x"]  = { fn = actions.cs_delete, reload = true },
+        },
+        -- uncomment to execute a callback on preview|close
+        -- cb_preview        = function() ... end,
+        -- cb_exit           = function() ... end,
       },
       keymaps = {
         prompt            = "Keymaps> ",
@@ -1182,6 +1246,7 @@ open an issue and I'll be more than happy to help.**
       quickfix = {
         file_icons        = true,
         git_icons         = true,
+        only_valid        = false, -- select among only the valid quickfix entries
       },
       quickfix_stack = {
         prompt = "Quickfix Stack> ",
@@ -1243,10 +1308,7 @@ open an issue and I'll be more than happy to help.**
             symbol_fmt        = function(s, opts) return "[" .. s .. "]" end,
             -- prefix child symbols. set to any string or `false` to disable
             child_prefix      = true,
-            fzf_opts          = {
-              ["--tiebreak"] = "begin",
-              ["--info"]     = "default",
-            },
+            fzf_opts          = { ["--tiebreak"] = "begin" },
         },
         code_actions = {
             prompt            = 'Code Actions> ',
@@ -1258,7 +1320,6 @@ open an issue and I'll be more than happy to help.**
         },
         finder = {
             prompt      = "LSP Finder> ",
-            fzf_opts    = { ["--info"] = "default" },
             file_icons  = true,
             color_icons = true,
             git_icons   = false,
@@ -1330,15 +1391,7 @@ open an issue and I'll be more than happy to help.**
       -- manpages = { previewer = "man_native" },
       -- helptags = { previewer = "help_native" },
       -- 
-      -- optional override of file extension icon colors
-      -- available colors (terminal):
-      --    clear, bold, black, red, green, yellow
-      --    blue, magenta, cyan, grey, dark_grey, white
-      file_icon_colors = {
-        ["sh"] = "green",
-      },
-      -- padding can help kitty term users with
-      -- double-width icon rendering
+      -- padding can help kitty term users with double-width icon rendering
       file_icon_padding = '',
       -- uncomment if your terminal/font does not support unicode character
       -- 'EN SPACE' (U+2002), the below sets it to 'NBSP' (U+00A0) instead
@@ -1349,7 +1402,7 @@ open an issue and I'll be more than happy to help.**
                                                                               
 HIGHLIGHTS                                                *fzf-lua-highlights*
 
-FzfLua conviniently creates the below highlights, each hlgroup can be
+FzfLua conveniently creates the below highlights, each hlgroup can be
 temporarily overridden by its corresponding `winopts` option:
 
 | Highlight Group       | Default     | Override Via              | Notes |
@@ -1380,6 +1433,7 @@ temporarily overridden by its corresponding `winopts` option:
 |FzfLuaTabTitle    |*LightSkyBlue1    |`hls.tab_title`     |Tab title (`tabs`)|
 |FzfLuaTabMarker   |*BlanchedAlmond   |`hls.tab_marker`    |Tab marker (`tabs`)|
 |FzfLuaDirIcon     |Directory         |`hls.dir_icon`      |Paths directory icon|
+|FzfLuaLiveSym     |*Brown1           |`hls.live_sym`      |LSP live symbols query match|
 
 <sup><sub>&ast;Not a highlight group, RGB color from
 `nvim_get_color_map`</sub></sup>

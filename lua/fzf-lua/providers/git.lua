@@ -49,8 +49,10 @@ M.status = function(opts)
 
   local contents
   if opts.multiprocess then
-    -- git status does not require preprocessing
-    opts.__mt_preprocess = [[return true]]
+    -- git status does not require preprocessing if not loading devicons
+    opts.__mt_preprocess = opts.file_icons
+        and [[return require("fzf-lua.devicons").load()]]
+        or [[return true]]
     opts.__mt_transform = [[return require("make_entry").git_status]]
     contents = core.mt_cmd_wrapper(opts)
   else
@@ -104,7 +106,13 @@ M.commits = function(opts)
       opts.preview_pager = opts.preview_pager()
     end
     if opts.preview_pager then
-      opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
+      opts.preview = string.format("%s | %s", opts.preview,
+        utils._if_win_normalize_vars(opts.preview_pager))
+    end
+    if vim.o.shell and vim.o.shell:match("fish$") then
+      -- TODO: why does fish shell refuse to pass along $COLUMNS
+      -- to delta while the same exact commands works with bcommits?
+      opts.preview = "sh -c " .. libuv.shellescape(opts.preview)
     end
   end
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
@@ -129,7 +137,7 @@ M.bcommits = function(opts)
   end
   local git_root = path.git_root(opts)
   if not git_root then return end
-  local file = path.relative(vim.fn.expand("%:p"), git_root)
+  local file = libuv.shellescape(path.relative_to(vim.fn.expand("%:p"), git_root))
   local range
   if utils.mode_is_visual() then
     local _, sel = utils.get_visual_selection()
@@ -141,13 +149,14 @@ M.bcommits = function(opts)
     opts.cmd = opts.cmd .. " " .. (range or file)
   end
   if type(opts.preview) == "string" then
-    opts.preview = opts.preview:gsub("[<{]file[}>]", libuv.shellescape(file))
+    opts.preview = opts.preview:gsub("[<{]file[}>]", file)
     opts.preview = path.git_cwd(opts.preview, opts)
     if type(opts.preview_pager) == "function" then
       opts.preview_pager = opts.preview_pager()
     end
     if opts.preview_pager then
-      opts.preview = string.format("%s | %s", opts.preview, opts.preview_pager)
+      opts.preview = string.format("%s | %s", opts.preview,
+        utils._if_win_normalize_vars(opts.preview_pager))
     end
   end
   opts = core.set_header(opts, opts.headers or { "actions", "cwd" })
@@ -157,7 +166,6 @@ end
 M.branches = function(opts)
   opts = config.normalize_opts(opts, "git.branches")
   if not opts then return end
-  opts.fzf_opts["--no-multi"] = ""
   if opts.preview then
     opts.__preview = path.git_cwd(opts.preview, opts)
     opts.preview = shell.raw_preview_action_cmd(function(items)
@@ -170,6 +178,7 @@ M.branches = function(opts)
       return opts.__preview:gsub("{.*}", branch)
     end, nil, opts.debug)
   end
+  opts.headers = opts.headers or { "cwd", "actions" }
   return git_cmd(opts)
 end
 
@@ -187,6 +196,13 @@ M.stash = function(opts)
 
   if opts.preview then
     opts.preview = path.git_cwd(opts.preview, opts)
+    if type(opts.preview_pager) == "function" then
+      opts.preview_pager = opts.preview_pager()
+    end
+    if opts.preview_pager then
+      opts.preview = string.format("%s | %s", opts.preview,
+        utils._if_win_normalize_vars(opts.preview_pager))
+    end
   end
   if opts.search and opts.search ~= "" then
     -- search by stash content, git stash -G<regex>

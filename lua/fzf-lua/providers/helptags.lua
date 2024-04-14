@@ -52,7 +52,7 @@ local fzf_fn = function(cb)
   end)()
 
   local add_tag = function(t, fzf_cb, co)
-    local tag = string.format("%-80s %s %s", hl(t.tag), t.filename, t.filepath)
+    local tag = string.format("%-80s %s%s%s", hl(t.tag), t.filename, utils.nbsp, t.filepath)
     fzf_cb(tag, function()
       coroutine.resume(co)
     end)
@@ -93,9 +93,6 @@ end
 M.helptags = function(opts)
   opts = config.normalize_opts(opts, "helptags")
   if not opts then return end
-
-  opts.fzf_opts["--no-multi"] = ""
-
   core.fzf_exec(fzf_fn, opts)
 end
 

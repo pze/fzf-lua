@@ -1,24 +1,35 @@
+-- make value truthy so we can load the path module and subsequently
+-- the libuv module without overriding the global require used only
+-- for spawn_stdio headless instances, this way we can call
+-- require("fzf-lua") from test specs (which also run headless)
+vim.g.fzf_lua_directory = ""
+
 local path = require "fzf-lua.path"
 local utils = require "fzf-lua.utils"
 local config = require "fzf-lua.config"
 
 do
-  -- using the latest nightly 'NVIM v0.6.0-dev+569-g2ecf0a4c6'
-  -- plugin '.vim' initialization sometimes doesn't get called
-  local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
-  vim.g.fzf_lua_directory = path.parent(currFile)
-
-  -- Manually source the vimL script containing ':FzfLua' cmd
-  if not vim.g.loaded_fzf_lua then
-    local fzf_lua_vim = path.join({
-      path.parent(path.parent(vim.g.fzf_lua_directory)),
-      "plugin", "fzf-lua.vim"
-    })
-    if vim.loop.fs_stat(fzf_lua_vim) then
-      vim.cmd(("source %s"):format(fzf_lua_vim))
-      -- utils.info(("manually loaded '%s'"):format(fzf_lua_vim))
+  local function source_vimL(path_parts)
+    local vimL_file = path.join(path_parts)
+    if vim.loop.fs_stat(vimL_file) then
+      vim.cmd("source " .. vimL_file)
+      -- print(string.format("loaded '%s'", vimL_file))
     end
   end
+
+  local currFile = debug.getinfo(1, "S").source:gsub("^@", "")
+  vim.g.fzf_lua_directory = path.normalize(path.parent(currFile))
+  local fzf_lua_root = path.parent(path.parent(vim.g.fzf_lua_directory))
+
+  -- Manually source the vimL script containing ':FzfLua' cmd
+  -- does nothing if already loaded due to `vim.g.loaded_fzf_lua`
+  source_vimL({ fzf_lua_root, "plugin", "fzf-lua.vim" })
+  -- Autoload scipts dynamically loaded on `vim.fn[fzf_lua#...]` call
+  -- `vim.fn.exists("*fzf_lua#...")` will return 0 unless we manuall source
+  source_vimL({ fzf_lua_root, "autoload", "fzf_lua.vim" })
+  -- Set var post source as the top of the file `require` will return 0
+  -- due to it potentially being loaded before "autoload/fzf_lua.vim"
+  utils.__HAS_AUTOLOAD_FNS = vim.fn.exists("*fzf_lua#getbufinfo") == 1
 
   -- Create a new RPC server (tmp socket) to listen to messages (actions/headless)
   -- this is safer than using $NVIM_LISTEN_ADDRESS. If the user is using a custom
@@ -33,6 +44,9 @@ local M = {}
 
 -- Setup fzf-lua's highlights, use `override=true` to reset all highlights
 function M.setup_highlights(override)
+  local is_light = vim.o.bg == "light"
+  local bg_changed = config.__HLS_STATE and config.__HLS_STATE.bg ~= vim.o.bg
+  config.__HLS_STATE = { colorscheme = vim.g.colors_name, bg = vim.o.bg }
   -- we use `default = true` so calling this function doesn't override the colorscheme
   local default = not override
   local highlights = {
@@ -52,21 +66,39 @@ function M.setup_highlights(override)
     { "FzfLuaScrollBorderFull",  "scrollborder_f", { default = default, link = "FzfLuaBorder" } },
     { "FzfLuaScrollFloatEmpty",  "scrollfloat_e",  { default = default, link = "PmenuSbar" } },
     { "FzfLuaScrollFloatFull",   "scrollfloat_f",  { default = default, link = "PmenuThumb" } },
-    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
-    { "FzfLuaHeaderBind",        "header_bind",    { default = default, fg = "BlanchedAlmond" } },
-    { "FzfLuaHeaderText",        "header_text",    { default = default, fg = "Brown1" } },
-    -- Provider specific highlights
-    { "FzfLuaBufName",           "buf_name",       { default = default, fg = "LightMagenta" } },
-    { "FzfLuaBufNr",             "buf_nr",         { default = default, fg = "BlanchedAlmond" } },
-    { "FzfLuaBufLineNr",         "buf_linenr",     { default = default, fg = "MediumSpringGreen" } },
-    { "FzfLuaBufFlagCur",        "buf_flag_cur",   { default = default, fg = "Brown1" } },
-    { "FzfLuaBufFlagAlt",        "buf_flag_alt",   { default = default, fg = "CadetBlue1" } },
-    { "FzfLuaTabTitle",          "tab_title",      { default = default, fg = "LightSkyBlue1", bold = true } },
-    { "FzfLuaTabMarker",         "tab_marker",     { default = default, fg = "BlanchedAlmond", bold = true } },
     { "FzfLuaDirIcon",           "dir_icon",       { default = default, link = "Directory" } },
+    -- Fzf terminal hls, colors from `vim.api.nvim_get_color_map()`
+    { "FzfLuaHeaderBind", "header_bind",
+      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond" } },
+    { "FzfLuaHeaderText", "header_text",
+      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    { "FzfLuaLiveSym", "live_sym",
+      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    -- Provider specific highlights
+    { "FzfLuaBufName", "buf_name",        -- lines|blines (hidden)
+      { default = default, fg = is_light and "DarkOrchid3" or "LightMagenta" } },
+    { "FzfLuaBufLineNr", "buf_linenr",    -- lines|blines
+      { default = default, fg = is_light and "MediumSpringGreen" or "MediumSpringGreen" } },
+    { "FzfLuaBufNr", "buf_nr",            -- buffers|tabs|lines|blines
+      { default = default, fg = is_light and "AquaMarine3" or "BlanchedAlmond" } },
+    { "FzfLuaBufFlagCur", "buf_flag_cur", -- buffers|tabs
+      { default = default, fg = is_light and "Brown4" or "Brown1" } },
+    { "FzfLuaBufFlagAlt", "buf_flag_alt", -- buffers|tabs
+      { default = default, fg = is_light and "CadetBlue4" or "CadetBlue1" } },
+    { "FzfLuaTabTitle", "tab_title",      -- tabs
+      { default = default, fg = is_light and "CadetBlue4" or "LightSkyBlue1", bold = true } },
+    { "FzfLuaTabMarker", "tab_marker",    -- tabs
+      { default = default, fg = is_light and "MediumSpringGreen" or "BlanchedAlmond", bold = true } },
   }
   for _, a in ipairs(highlights) do
     local hl_name, _, hl_def = a[1], a[2], a[3]
+    -- If color was a linked colormap and bg changed set definition to override
+    if hl_def.fg and bg_changed then
+      local fg_current = vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hl_name)), "fg")
+      if fg_current and not fg_current:match("^#") and fg_current ~= hl_def.fg then
+        hl_def.default = false
+      end
+    end
     if utils.__HAS_NVIM_07 then
       vim.api.nvim_set_hl(0, hl_name, hl_def)
     else
@@ -106,23 +138,35 @@ end
 -- case the user decides not to call `setup()`
 M.setup_highlights()
 
-function M.load_profile(profile)
-  local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
-  return utils.load_profile(fname, nil, true)
-end
-
-function M.setup(opts, do_not_reset_defaults)
-  opts = type(opts) == "table" and opts or {}
-  if type(opts[1]) == "string" then
-    -- Did the user request a specific profile?
-    local profile_opts = M.load_profile(opts[1])
+local function load_profiles(profiles)
+  local ret = {}
+  profiles = type(profiles) == "table" and profiles
+      or type(profiles) == "string" and { profiles }
+      or {}
+  for _, profile in ipairs(profiles) do
+    local fname = path.join({ vim.g.fzf_lua_directory, "profiles", profile .. ".lua" })
+    local profile_opts = utils.load_profile_fname(fname, nil, true)
     if type(profile_opts) == "table" then
+      if profile_opts[1] then
+        -- profile requires loading base profile(s)
+        profile_opts = vim.tbl_deep_extend("keep",
+          profile_opts, load_profiles(profile_opts[1]))
+      end
       if type(profile_opts.fn_load) == "function" then
         profile_opts.fn_load()
         profile_opts.fn_load = nil
       end
-      opts = vim.tbl_deep_extend("keep", opts, profile_opts)
+      ret = vim.tbl_deep_extend("force", ret, profile_opts)
     end
+  end
+  return ret
+end
+
+function M.setup(opts, do_not_reset_defaults)
+  opts = type(opts) == "table" and opts or {}
+  if opts[1] then
+    -- Did the user supply profile(s) to load?
+    opts = vim.tbl_deep_extend("keep", opts, load_profiles(opts[1]))
   end
   if do_not_reset_defaults then
     -- no defaults reset requested, merge with previous setup options
@@ -195,10 +239,14 @@ do
     tabs = { "fzf-lua.providers.buffers", "tabs" },
     lines = { "fzf-lua.providers.buffers", "lines" },
     blines = { "fzf-lua.providers.buffers", "blines" },
+    helptags = { "fzf-lua.providers.helptags", "helptags" },
+    manpages = { "fzf-lua.providers.manpages", "manpages" },
+    -- backward compat
     help_tags = { "fzf-lua.providers.helptags", "helptags" },
     man_pages = { "fzf-lua.providers.manpages", "manpages" },
     colorschemes = { "fzf-lua.providers.colorschemes", "colorschemes" },
     highlights = { "fzf-lua.providers.colorschemes", "highlights" },
+    awesome_colorschemes = { "fzf-lua.providers.colorschemes", "awesome_colorschemes" },
     jumps = { "fzf-lua.providers.nvim", "jumps" },
     changes = { "fzf-lua.providers.nvim", "changes" },
     tagstack = { "fzf-lua.providers.nvim", "tagstack" },
@@ -238,13 +286,6 @@ do
     deregister_ui_select = { "fzf-lua.providers.ui_select", "deregister" },
     tmux_buffers = { "fzf-lua.providers.tmux", "buffers" },
     profiles = { "fzf-lua.providers.module", "profiles" },
-    -- API shortcuts
-    fzf = { "fzf-lua.core", "fzf" },
-    fzf_raw = { "fzf-lua.fzf", "raw_fzf" },
-    fzf_wrap = { "fzf-lua.core", "fzf_wrap" },
-    fzf_exec = { "fzf-lua.core", "fzf_exec" },
-    fzf_live = { "fzf-lua.core", "fzf_live" },
-    fzf_complete = { "fzf-lua.complete", "fzf_complete" },
     complete_path = { "fzf-lua.complete", "path" },
     complete_file = { "fzf-lua.complete", "file" },
     complete_line = { "fzf-lua.complete", "line" },
@@ -292,6 +333,12 @@ end
 -- export the defaults module and deref
 M.defaults = require("fzf-lua.defaults").defaults
 
+-- API shortcuts
+M.fzf_exec = require("fzf-lua.core").fzf_exec
+M.fzf_live = require("fzf-lua.core").fzf_live
+M.fzf_wrap = require("fzf-lua.core").fzf_wrap
+-- M.fzf_raw = require( "fzf-lua.fzf").raw_fzf
+
 -- exported modules
 M._exported_modules = {
   "win",
@@ -307,14 +354,12 @@ M._exported_modules = {
 
 -- excluded from builtin / auto-complete
 M._excluded_meta = {
-  "load_profile",
   "setup",
   "fzf",
   "fzf_raw",
   "fzf_wrap",
   "fzf_exec",
   "fzf_live",
-  "fzf_complete",
   "defaults",
   "_excluded_meta",
   "_excluded_metamap",
@@ -323,6 +368,11 @@ M._excluded_meta = {
   "get_info",
   "set_info",
   "get_last_query",
+  -- Exclude due to rename:
+  --   help_tags -> helptags
+  --   man_pages -> manpages
+  "help_tags",
+  "man_pages",
 }
 
 for _, m in ipairs(M._exported_modules) do

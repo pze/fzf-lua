@@ -48,6 +48,9 @@ local function check_capabilities(handler, silent)
     return num_clients
   end
 
+  -- UI won't open, reset the CTX
+  core.__CTX = nil
+
   if utils.tbl_isempty(clients) then
     if not silent then
       utils.info("LSP: no client attached")
@@ -98,7 +101,7 @@ local function location_handler(opts, cb, _, result, ctx, _)
   result = vim.tbl_filter(function(x)
     local item = vim.lsp.util.locations_to_items({ x }, encoding)[1]
     table.insert(items, item)
-    if opts.cwd_only and not path.is_relative(item.filename, opts.cwd) then
+    if opts.cwd_only and not path.is_relative_to(item.filename, opts.cwd) then
       return false
     end
     return true
@@ -188,6 +191,18 @@ local function symbol_handler(opts, cb, _, result, _, _)
     if (not opts.current_buffer_only or core.CTX().bname == entry.filename) and
         (not opts.regex_filter or entry.text:match(opts.regex_filter)) then
       local mbicon_align = 0
+      if opts.fn_reload and type(opts.query) == "string" and #opts.query > 0 then
+        -- highlight exact matches with `live_workspace_symbols` (#1028)
+        local sym, text = entry.text:match("^(.+%])(.*)$")
+        local pattern = "[" .. utils.lua_regex_escape(
+          opts.query:gsub("%a", function(x)
+            return string.upper(x) .. string.lower(x)
+          end)
+        ) .. "]+"
+        entry.text = sym .. text:gsub(pattern, function(x)
+          return utils.ansi_codes[opts.hls.live_sym](x)
+        end)
+      end
       if M._sym2style then
         local kind = entry.text:match("%[(.-)%]")
         local styled = kind and M._sym2style[kind]
@@ -209,7 +224,12 @@ local function symbol_handler(opts, cb, _, result, _, _)
       entry = make_entry.file(entry, opts)
       if entry then
         local align = 48 + mbicon_align + utils.ansi_escseq_len(symbol)
-        entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
+        -- TODO: string.format %-{n}s fails with align > ~100?
+        -- entry = string.format("%-" .. align .. "s%s%s", symbol, utils.nbsp, entry)
+        if align > #symbol then
+          symbol = symbol .. string.rep(" ", align - #symbol)
+        end
+        entry = symbol .. utils.nbsp .. entry
         cb(opts._fmt and opts._fmt.to and opts._fmt.to(entry, opts) or entry)
       end
     end
@@ -516,14 +536,14 @@ end
 
 -- see $VIMRUNTIME/lua/vim/buf.lua:pick_call_hierarchy_item()
 local function gen_lsp_contents_call_hierarchy(opts)
-  local lsp_params = vim.lsp.util.make_position_params(core.CTX().winid)
+  local lsp_params = opts.lsp_params or vim.lsp.util.make_position_params(core.CTX().winid)
   local method = "textDocument/prepareCallHierarchy"
   local res, err = vim.lsp.buf_request_sync(0, method, lsp_params, 2000)
   if err then
     utils.err(("Error executing '%s': %s"):format(method, err))
   else
     local _, response = next(res)
-    if vim.tbl_isempty(response) or not response.result[1] then
+    if not response or not response.result or not response.result[1] then
       if not opts.silent then
         utils.info(("No %s found"):format(opts.lsp_handler.label:lower()))
       end
@@ -539,7 +559,11 @@ local normalize_lsp_opts = function(opts, cfg, __resume_key)
   opts = config.normalize_opts(opts, cfg, __resume_key)
   if not opts then return end
 
-  if not opts.prompt and opts.prompt_postfix then
+  -- `title_prefix` is priortized over both `prompt` and `prompt_prefix`
+  if (not opts.winopts or opts.winopts.title == nil) and opts.title_prefix then
+    utils.map_set(opts,
+      "winopts.title", string.format(" %s %s ", opts.title_prefix, opts.lsp_handler.label))
+  elseif opts.prompt == nil and opts.prompt_postfix then
     opts.prompt = opts.lsp_handler.label .. (opts.prompt_postfix or "")
   end
 
@@ -559,7 +583,10 @@ local function fzf_lsp_locations(opts, fn_contents)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = core.set_fzf_field_index(opts)
   opts = fn_contents(opts)
-  if not opts.__contents then return end
+  if not opts.__contents then
+    core.__CTX = nil
+    return
+  end
   return core.fzf_exec(opts.__contents, opts)
 end
 
@@ -597,6 +624,7 @@ M.finder = function(opts)
   if not opts then return end
   if opts.force_uri == nil then opts.force_uri = true end
   local contents = {}
+  local lsp_params = opts.lsp_params
   for _, p in ipairs(opts.providers) do
     local method = p[1]
     if not opts._providers[method] then
@@ -606,7 +634,7 @@ M.finder = function(opts)
       opts.no_autoclose = true
       opts.lsp_handler = handlers[method]
       opts.lsp_handler.capability = handler_capabilty(opts.lsp_handler)
-      opts.lsp_params = nil -- empty out previous calls params if existed
+      opts.lsp_params = lsp_params -- reset previous calls params if existed
 
       -- returns nil for no client attached, false for unsupported capability
       -- we only abort if no client is attached
@@ -633,6 +661,7 @@ M.finder = function(opts)
   end
   if #contents == 0 then
     utils.info("LSP: no locations found")
+    core.__CTX = nil
     return
   end
   opts = core.set_fzf_field_index(opts)
@@ -648,9 +677,9 @@ local function gen_sym2style_map(opts)
     -- style==2: "<icon>"
     -- style==3: "<kind>"
     local s = nil
-    if tonumber(opts.symbol_style) == 1 and config._has_devicons then
+    if tonumber(opts.symbol_style) == 1 then
       s = ("%s %s"):format(icon, kind)
-    elseif tonumber(opts.symbol_style) == 2 and config._has_devicons then
+    elseif tonumber(opts.symbol_style) == 2 then
       s = icon
     elseif tonumber(opts.symbol_style) == 3 then
       s = kind
@@ -699,7 +728,10 @@ M.document_symbols = function(opts)
     opts.fn_pre_fzf()
   end
   opts = gen_lsp_contents(opts)
-  if not opts.__contents then return end
+  if not opts.__contents then
+    core.__CTX = nil
+    return
+  end
   return core.fzf_exec(opts.__contents, opts)
 end
 
@@ -713,7 +745,10 @@ M.workspace_symbols = function(opts)
   opts = core.set_fzf_field_index(opts)
   if opts.force_uri == nil then opts.force_uri = true end
   opts = gen_lsp_contents(opts)
-  if not opts.__contents then return end
+  if not opts.__contents then
+    core.__CTX = nil
+    return
+  end
   if opts.symbol_style or opts.symbol_fmt then
     opts.fn_pre_fzf = function() gen_sym2style_map(opts) end
     opts.fn_post_fzf = function() M._sym2style = nil end
@@ -731,7 +766,9 @@ M.live_workspace_symbols = function(opts)
 
   -- prepend prompt with "*" to indicate "live" query
   opts.prompt = type(opts.prompt) == "string" and opts.prompt or ""
-  opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  if opts.live_ast_prefix ~= false then
+    opts.prompt = opts.prompt:match("^%*") and opts.prompt or ("*" .. opts.prompt)
+  end
 
   -- when using live_workspace_symbols there is no "query"
   -- the prompt input is the LSP query, store as "lsp_query"
@@ -742,6 +779,8 @@ M.live_workspace_symbols = function(opts)
     utils.map_set(config, "__resume_data.last_query", val)
     -- also store query for `fzf_resume` (#963)
     utils.map_set(config, "__resume_data.opts.query", val)
+    -- store in opts for convinience in action callbacks
+    o.last_query = val
   end
   opts.__resume_get = function(what, o)
     return config.resume_get(
@@ -765,6 +804,7 @@ M.live_workspace_symbols = function(opts)
   -- use our own
   opts.func_async_callback = false
   opts.fn_reload = function(query)
+    opts.query = query
     opts.lsp_params = { query = query or "" }
     opts = gen_lsp_contents(opts)
     return opts.__contents

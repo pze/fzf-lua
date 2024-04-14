@@ -49,6 +49,7 @@ end
 M.accept_item = function(selected, o)
   local idx = selected and tonumber(selected[1]:match("^%s*(%d+)%.")) or nil
   o._on_choice(idx and o._items[idx] or nil, idx)
+  o._on_choice_called = true
 end
 
 M.ui_select = function(items, ui_opts, on_choice)
@@ -73,12 +74,6 @@ M.ui_select = function(items, ui_opts, on_choice)
     kind = "quickfix",
     title = "Mark `mymainmenu` as defined global."
   } } ]]
-  -- exit visual mode if needed
-  local mode = vim.api.nvim_get_mode()
-  if not mode.mode:match("^n") then
-    utils.feed_keys_termcodes("<Esc>")
-  end
-
   local entries = {}
 
   local max_bits = #(tostring(#items))
@@ -103,7 +98,7 @@ M.ui_select = function(items, ui_opts, on_choice)
   end
 
   opts.fzf_opts = vim.tbl_extend("keep", opts.fzf_opts or {}, {
-    ["--no-multi"]       = "",
+    ["--no-multi"]       = true,
     ["--preview-window"] = "hidden:right:0",
   })
 
@@ -125,9 +120,21 @@ M.ui_select = function(items, ui_opts, on_choice)
     config.set_action_helpstr(opts.actions["default"], nil)
 
     if not selected then
+      -- with `actions.dummy_abort` this doesn't get called anymore
+      -- as the action is configured as a valid fzf "accept" (thus
+      -- `selected` isn't empty), see below comment for mor info
       on_choice(nil, nil)
     else
+      o._on_choice_called = nil
       actions.act(o.actions, selected, o)
+      if not o._on_choice_called then
+        -- see  comment above, `on_choice` wasn't called, either
+        -- "dummy_abort" (ctrl-c/esc) or (unlikely) the user setup
+        -- additional binds that aren't for "accept". Not calling
+        -- with nil (no action) can cause issues, for example with
+        -- dressing.nvim (#1014)
+        on_choice(nil, nil)
+      end
     end
 
     if opts.post_action_cb then
